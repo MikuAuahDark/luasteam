@@ -10,6 +10,7 @@
 
 ### Build Files ###
 
+/build
 /cache
 /LuaJIT-2.0.5
 

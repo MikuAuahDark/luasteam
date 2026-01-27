@@ -186,7 +186,7 @@ static int getItemDefinitionProperties(lua_State *L, SteamItemDef_t definition) 
 }
 
 // bool GetItemDefinitionProperty( SteamItemDef_t iDefinition, const char *pchPropertyName, char *pchValueBuffer, uint32 *punValueBufferSizeOut );
-EXTERN int luasteam_GetItemDefinitionProperty(lua_State *L) {
+EXTERN int luasteam_getItemDefinitionProperty(lua_State *L) {
     SteamItemDef_t definition = luaL_checkinteger(L, 1);
 
     const char *propertyName = nullptr;
@@ -269,7 +269,7 @@ void add_inventory(lua_State *L) {
     add_func(L, "generateItems", luasteam_generateItems);
     add_func(L, "getAllItems", luasteam_getAllItems);
     add_func(L, "getItemDefinitionIDs", luasteam_getItemDefinitionIDs);
-    add_func(L, "getItemDefinitionProperty", luasteam_GetItemDefinitionProperty);
+    add_func(L, "getItemDefinitionProperty", luasteam_getItemDefinitionProperty);
     add_func(L, "getResultItems", luasteam_getResultItems);
     add_func(L, "getResultStatus", luasteam_getResultStatus);
     add_func(L, "loadItemDefinitions", luasteam_loadItemDefinitions);
