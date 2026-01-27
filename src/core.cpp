@@ -4,6 +4,7 @@
 #include "extra.hpp"
 #include "friends.hpp"
 #include "input.hpp"
+#include "inventory.hpp"
 #include "networkingSockets.hpp"
 #include "networkingUtils.hpp"
 #include "user.hpp"
@@ -27,6 +28,7 @@ EXTERN int luasteam_init(lua_State *L) {
         luasteam::init_extra(L);
         luasteam::init_apps(L);
         luasteam::init_input(L);
+        luasteam::init_inventory(L);
         luasteam::init_networkingSockets(L);
         luasteam::init_networkingUtils(L);
     } else {
@@ -42,6 +44,7 @@ EXTERN int luasteam_shutdown(lua_State *L) {
     // Cleaning up
     luasteam::shutdown_networkingUtils(L);
     luasteam::shutdown_networkingSockets(L);
+    luasteam::shutdown_inventory(L);
     luasteam::shutdown_input(L);
     luasteam::shutdown_apps(L);
     luasteam::shutdown_extra(L);
