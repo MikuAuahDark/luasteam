@@ -5,9 +5,7 @@ name: CI
 
 on:
   push:
-    branches: [master, ci-test]
   pull_request:
-    branches: [master]
   release:
     types: [created]
 
@@ -16,18 +14,19 @@ jobs:
     runs-on: ubuntu-latest
     container: buildpack-deps:20.04 # Older version is better for compatibility
     steps:
+      - name: Install dependencies
+        run: apt-get update && apt-get install -y build-essential g++-multilib
       - uses: actions/checkout@v6
+        with:
+          submodules: recursive
       - name: Fix Git Trust
         # This tells git to ignore ownership checks for the current workspace
         run: git config --global --add safe.directory '*'
-      - name: Update submodules
-        run: git submodule update --init
-      - name: Install dependencies
-        run: apt-get update && apt-get install -y build-essential g++-multilib
       - name: Download Steamworks SDK
-        run: |
-          curl -u yancouto:${{ secrets.SDK_TOKEN }} -sL https://raw.githubusercontent.com/yancouto/private-steamworks-sdk/master/steamworks_sdk_163.zip -o sdk.zip
-          unzip -q sdk.zip
+        uses: actions/checkout@v6
+        with:
+          repository: rlabrecque/SteamworksSDK
+          path: sdk
       - name: Build linux64
         run: make linux64 && mkdir -p build && cp luasteam.so build/linux64_luasteam.so
       - name: Build linux32
@@ -42,12 +41,13 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Update submodules
-        run: git submodule update --init
+        with:
+          submodules: recursive
       - name: Download Steamworks SDK
-        run: |
-          curl -u yancouto:${{ secrets.SDK_TOKEN }} -sL https://raw.githubusercontent.com/yancouto/private-steamworks-sdk/master/steamworks_sdk_163.zip -o sdk.zip
-          unzip -q sdk.zip
+        uses: actions/checkout@v6
+        with:
+          repository: rlabrecque/SteamworksSDK
+          path: sdk
       - name: Build
         run: make osx && mkdir -p build && cp luasteam.so build/osx_luasteam.so
       - name: Upload artifacts
@@ -72,14 +72,13 @@ jobs:
             mingw-w64-i686-gcc
             mingw-w64-i686-make
       - uses: actions/checkout@v6
-      - name: Update submodules
-        shell: bash
-        run: git submodule update --init
+        with:
+          submodules: recursive
       - name: Download Steamworks SDK
-        shell: bash
-        run: |
-          curl -u yancouto:${{ secrets.SDK_TOKEN }} -sL https://raw.githubusercontent.com/yancouto/private-steamworks-sdk/master/steamworks_sdk_163.zip -o sdk.zip
-          unzip -q sdk.zip
+        uses: actions/checkout@v6
+        with:
+          repository: rlabrecque/SteamworksSDK
+          path: sdk
       - name: Build win64
         run: |
           export PATH=/mingw64/bin:$PATH
