@@ -32,9 +32,34 @@ jobs:
       - name: Build linux32
         run: make clean && make linux32 && cp luasteam.so build/linux32_luasteam.so
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: linux-binaries
+          path: build/*.so
+
+  build-linux-arm:
+    runs-on: ubuntu-22.04-arm
+    steps:
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential 
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - name: Download Steamworks SDK
+        uses: actions/checkout@v6
+        with:
+          repository: rlabrecque/SteamworksSDK
+          path: sdk
+      - name: Build linux64
+        run: |
+          sset -e
+          make linux64
+          mkdir -p build
+          cp luasteam.so build/linuxarm64_luasteam.so
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: linux-binaries-arm
           path: build/*.so
 
   build-macos:
@@ -51,50 +76,83 @@ jobs:
       - name: Build
         run: make osx && mkdir -p build && cp luasteam.so build/osx_luasteam.so
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: macos-binaries
           path: build/*.so
 
+  build-windows-luajit:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [x86, x64]
+    steps:
+      - name: Checkout LuaJIT
+        uses: actions/checkout@v6
+        with:
+          repository: LuaJIT/LuaJIT
+          path: luajit
+      - name: Setup VS Dev Cmd
+        uses: TheMrMilchmann/setup-msvc-dev@v4
+        with:
+          arch: ${{ matrix.arch }}
+      - name: Build
+        shell: cmd
+        working-directory: luajit/src
+        run: msvcbuild.bat
+      - name: Artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: temp-luajit-${{ matrix.arch }}
+          path: luajit/*
+          if-no-files-found: error
+          retention-days: 1
+
   build-windows:
     runs-on: windows-latest
+    needs: build-windows-luajit
+    strategy:
+      matrix:
+        arch: [x86, x64]
     defaults:
       run:
-        shell: msys2 {0}
+        shell: cmd
     steps:
-      - name: Install MSYS2
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: >-
-            make
-            mingw-w64-x86_64-gcc
-            mingw-w64-i686-gcc
-            mingw-w64-i686-make
+      - name: Determine CMake Architecture
+        id: arch
+        run: |
+          if "${{ matrix.arch }}" == "x86" (
+            echo arch=Win32 >> %GITHUB_OUTPUT%
+          ) else (
+            echo arch=${{ matrix.arch }} >> %GITHUB_OUTPUT%
+          )
       - uses: actions/checkout@v6
         with:
-          submodules: recursive
+          submodules: false
       - name: Download Steamworks SDK
         uses: actions/checkout@v6
         with:
           repository: rlabrecque/SteamworksSDK
           path: sdk
-      - name: Build win64
-        run: |
-          export PATH=/mingw64/bin:$PATH
-          make win64 && mkdir -p build && cp luasteam.dll build/win64_luasteam.dll
-      - name: Build win32
-        run: |
-            export PATH=/mingw32/bin:$PATH
-            make clean && make win32 && cp luasteam.dll build/win32_luasteam.dll
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - name: Download LuaJIT Artifact
+        uses: actions/download-artifact@v7
         with:
-          name: windows-binaries
-          path: build/*.dll
+          name: temp-luajit-${{ matrix.arch }}
+          path: luajit
+      - name: Configure
+        env:
+          LUAJIT_DIR: ${{ github.workspace }}\luajit\src
+        run: cmake -Bbuild -S. --install-prefix %CD%\installdir -A ${{ steps.arch.outputs.arch }}
+      - name: Build
+        run: cmake --build build --config RelWithDebInfo --target install
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: windows-binaries-${{ matrix.arch }}
+          path: installdir/
 
   release:
-    needs: [build-linux, build-macos, build-windows]
+    needs: [build-linux, build-linux-arm, build-macos, build-windows]
     runs-on: ubuntu-latest
     if: github.event_name == 'release'
     steps:
