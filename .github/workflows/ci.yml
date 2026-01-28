@@ -52,7 +52,7 @@ jobs:
           path: sdk
       - name: Build linux64
         run: |
-          sset -e
+          set -e
           make linux64
           mkdir -p build
           cp luasteam.so build/linuxarm64_luasteam.so
