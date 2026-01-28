@@ -49,12 +49,69 @@ void CallbackListener::OnSteamInventoryResultReady(SteamInventoryResultReady_t *
 }
 
 
+inline uint64 validateuint64(lua_State *L, int idx) {
+    // Validate common Lua type
+    switch (lua_type(L, idx))
+    {
+        case LUA_TNUMBER: {
+            return lua_tointeger(L, idx);
+        }
+        case LUA_TSTRING: {
+            try {
+                return std::stoull(lua_tostring(L, idx));
+            } catch (std::logic_error &e) {
+                break;
+            }
+        }
+    }
+
+    return luasteam::checkuint64(L, idx);
+}
+
 
 // void DestroyResult( SteamInventoryResult_t resultHandle );
 EXTERN int luasteam_destroyResult(lua_State *L) {
     SteamInventoryResult_t handle = (SteamInventoryResult_t) luaL_checkinteger(L, 1);
     SteamInventory()->DestroyResult(handle);
     return 0;
+}
+
+// bool ExchangeItems( SteamInventoryResult_t *pResultHandle, const SteamItemDef_t *pArrayGenerate, const uint32 *punArrayGenerateQuantity, uint32 unArrayGenerateLength, const SteamItemInstanceID_t *pArrayDestroy, const uint32 *punArrayDestroyQuantity, uint32 unArrayDestroyLength );
+EXTERN int luasteam_exchangeItems(lua_State *L) {
+    constexpr uint32 toGenerateArray[] = {1};
+    constexpr uint32 toGenerateCount = sizeof(toGenerateArray) / sizeof(toGenerateArray[0]);
+
+    SteamItemDef_t toGenerate = luaL_checkinteger(L, 1);
+    luaL_checktype(L, 2, LUA_TTABLE);
+
+    std::vector<SteamItemInstanceID_t> itemsToConsume;
+    std::vector<uint32> itemsToConsumeQuantity;
+
+    lua_pushnil(L);  /* first key */
+    while (lua_next(L, 2) != 0) {
+        SteamItemInstanceID_t itemId = validateuint64(L, -2);
+        uint32 count = luaL_checkinteger(L, -1);
+        itemsToConsume.push_back(itemId);
+        itemsToConsumeQuantity.push_back(count);
+        lua_pop(L, 1);
+    }
+
+    SteamInventoryResult_t handle = 0;
+    if (SteamInventory()->ExchangeItems(
+        &handle,
+        &toGenerate,
+        toGenerateArray,
+        toGenerateCount,
+        itemsToConsume.data(),
+        itemsToConsumeQuantity.data(),
+        itemsToConsume.size())
+    ) {
+        lua_pushinteger(L, handle);
+    } else {
+        lua_pushnil(L);
+    }
+
+    return 1;
 }
 
 // bool GenerateItems( SteamInventoryResult_t *pResultHandle, const SteamItemDef_t *pArrayItemDefs, const uint32 *punArrayQuantity, uint32 unArrayLength );
