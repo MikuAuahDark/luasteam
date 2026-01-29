@@ -321,8 +321,9 @@ EXTERN int luasteam_loadItemDefinitions(lua_State *L) {
 namespace luasteam {
 
 void add_inventory(lua_State *L) {
-    lua_createtable(L, 0, 8);
+    lua_createtable(L, 0, 9);
     add_func(L, "destroyResult", luasteam_destroyResult);
+    add_func(L, "exchangeItems", luasteam_exchangeItems);
     add_func(L, "generateItems", luasteam_generateItems);
     add_func(L, "getAllItems", luasteam_getAllItems);
     add_func(L, "getItemDefinitionIDs", luasteam_getItemDefinitionIDs);
