@@ -49,6 +49,10 @@ void CallbackListener::OnSteamInventoryResultReady(SteamInventoryResultReady_t *
 }
 
 
+inline int absidx(lua_State *L, int idx) {
+    return (idx > 0 || idx <= LUA_REGISTRYINDEX) ? idx : (lua_gettop(L) + idx + 1);
+}
+
 inline uint64 validateuint64(lua_State *L, int idx) {
     // Validate common Lua type
     switch (lua_type(L, idx))
@@ -65,7 +69,7 @@ inline uint64 validateuint64(lua_State *L, int idx) {
         }
     }
 
-    return luasteam::checkuint64(L, idx);
+    return luasteam::checkuint64(L, absidx(L, idx));
 }
 
 

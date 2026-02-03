@@ -143,7 +143,7 @@ EXTERN int luasteam_cancelAuthTicket(lua_State *L) {
 namespace luasteam {
 
 void add_user(lua_State *L) {
-    lua_createtable(L, 0, 4);
+    lua_createtable(L, 0, 5);
     add_func(L, "getPlayerSteamLevel", luasteam_getPlayerSteamLevel);
     add_func(L, "getSteamID", luasteam_getSteamID);
     add_func(L, "getAuthSessionTicket", luasteam_getAuthSessionTicket);
